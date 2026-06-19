@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting App Kelompok 1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            max-width: 520px;
+            margin: 50px auto;
+            padding: 20px;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* Floating particles background */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            animation: float linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 35px 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(102,126,234,0.1), transparent, rgba(118,75,162,0.1), transparent);
+            animation: rotateBg 6s linear infinite;
+            z-index: -1;
+        }
+        @keyframes rotateBg {
+            100% { transform: rotate(360deg); }
+        }
+
+        h2 {
+            text-align: center;
+            color: #222;
+            font-size: 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        h2::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            margin: 8px auto 0;
+            border-radius: 2px;
+        }
+
+        /* ===== VIEW MANAGEMENT ===== */
+        .view {
+            display: none;
+            animation: none;
+        }
+        .view.active {
+            display: block;
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .view.exit {
+            display: block;
+            animation: slideDown 0.3s ease-in forwards;
+        }
+        @keyframes slideUp {
+            0% { opacity: 0; transform: translateY(30px) scale(0.97); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes slideDown {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(30px) scale(0.97); }
+        }
+
+        /* ===== FORM ELEMENTS ===== */
+        label.standard-label {
+            display: block;
+            margin-top: 18px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+            transform: translateY(0);
+            transition: all 0.3s;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            margin-top: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+            outline: none;
+            background: #fafafa;
+        }
+        input[type="text"]:focus {
+            border-color: #667eea;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
+            transform: translateY(-1px);
+        }
+        input[type="text"]:focus + label,
+        input[type="text"]:not(:placeholder-shown) + label {
+            transform: translateY(-24px) scale(0.85);
+        }
+
+        /* ===== BUTTONS ===== */
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            box-sizing: border-box;
+            font-size: 16px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        button:active::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #5a67d8);
+            box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            box-shadow: 0 4px 15px rgba(72,187,120,0.4);
+            margin-top: 20px;
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(72,187,120,0.5);
+        }
+
+        .btn-cognito {
+            background: linear-gradient(135deg, #f6ad55, #ed8936);
+            box-shadow: 0 4px 15px rgba(237,137,54,0.4);
+        }
+        .btn-cognito:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(237,137,54,0.5);
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            box-shadow: 0 4px 15px rgba(66,153,225,0.4);
+        }
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(66,153,225,0.5);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #555;
+            border: 2px solid #e0e0e0;
+            box-shadow: none;
+        }
+        .btn-outline:hover {
+            background: #f7f7f7;
+            border-color: #ccc;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #fc8181, #e53e3e);
+            box-shadow: 0 4px 15px rgba(229,62,62,0.4);
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(229,62,62,0.5);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 22px 0;
+            color: #aaa;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        .divider:not(:empty)::before { margin-right: 14px; }
+        .divider:not(:empty)::after { margin-left: 14px; }
+
+        /* ===== MESSAGE / TOAST ===== */
+        #message {
+            margin-top: 16px;
+            padding: 14px 18px;
+            display: none;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #message.success-msg {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        #message.error-msg {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+        #message.info-msg {
+            background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        @keyframes toastIn {
+            0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-8px); }
+            20% { transform: translateX(8px); }
+            30% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            50% { transform: translateX(-4px); }
+            60% { transform: translateX(4px); }
+            70% { transform: translateX(-2px); }
+            80% { transform: translateX(2px); }
+        }
+
+        .success-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 20px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border: 2px solid #28a745;
+            animation: badgePop 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes badgePop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .checkmark-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #28a745;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: checkDraw 0.5s ease 0.3s both;
+        }
+        .checkmark-circle svg {
+            width: 28px;
+            height: 28px;
+        }
+        .checkmark-circle svg path {
+            stroke-dasharray: 50;
+            stroke-dashoffset: 50;
+            animation: checkStroke 0.4s ease 0.6s forwards;
+        }
+        @keyframes checkStroke {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* ===== VOTING STEP INDICATOR ===== */
+        .vote-steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 10px 0 18px;
+        }
+        .vote-step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #ccc;
+            transition: all 0.4s;
+        }
+        .vote-step .step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.4s;
+        }
+        .vote-step.active .step-num {
+            border-color: #667eea;
+            background: #667eea;
+            color: #fff;
+        }
+        .vote-step.active {
+            color: #667eea;
+        }
+        .vote-step.done .step-num {
+            border-color: #48bb78;
+            background: #48bb78;
+            color: #fff;
+        }
+        .vote-step.done {
+            color: #48bb78;
+        }
+        .step-connector {
+            width: 24px;
+            height: 2px;
+            background: #ddd;
+            border-radius: 2px;
+            transition: background 0.4s;
+        }
+        .step-connector.done {
+            background: #48bb78;
+        }
+
+        /* ===== CANDIDATE CARDS ===== */
+        .candidate-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 8px;
+        }
+        .candidate-card {
+            flex: 1;
+            border: 2px solid #e8e8e8;
+            border-radius: 16px;
+            padding: 18px 12px 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background-color: #fff;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .candidate-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .candidate-card:nth-child(1) { transition-delay: 0.05s; }
+        .candidate-card:nth-child(2) { transition-delay: 0.15s; }
+        .candidate-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            opacity: 0;
+            transition: opacity 0.4s;
+            border-radius: 14px;
+        }
+        .candidate-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            border-color: #667eea;
+            box-shadow: 0 12px 30px rgba(102,126,234,0.2);
+        }
+        .candidate-card:hover::before {
+            opacity: 0.05;
+        }
+        .candidate-card.selected {
+            border-color: #48bb78;
+            background: linear-gradient(135deg, #f0fff4, #e6ffed);
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 12px 30px rgba(72,187,120,0.3);
+            animation: cardPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes cardPulse {
+            0%, 100% { box-shadow: 0 12px 30px rgba(72,187,120,0.3); }
+            50% { box-shadow: 0 12px 40px rgba(72,187,120,0.5); }
+        }
+        .candidate-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 6px;
+            right: 10px;
+            color: #48bb78;
+            font-size: 20px;
+            font-weight: bold;
+            animation: badgePop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .candidate-img {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            border: 3px solid #e8e8e8;
+            transition: all 0.4s;
+            position: relative;
+            z-index: 1;
+        }
+        .candidate-card:hover .candidate-img {
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+        .candidate-card.selected .candidate-img {
+            border-color: #48bb78;
+            box-shadow: 0 0 0 4px rgba(72,187,120,0.2);
+        }
+
+        .candidate-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            position: relative;
+            z-index: 1;
+            margin-top: 4px;
+        }
+
+        .candidate-card input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            outline: none;
+            transition: all 0.3s;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .candidate-card input[type="radio"]:checked {
+            border-color: #48bb78;
+            background: #48bb78;
+            box-shadow: 0 0 0 3px rgba(72,187,120,0.2);
+        }
+        .candidate-card input[type="radio"]:checked::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: badgePop 0.3s ease;
+        }
+
+        /* ===== CONFIRMATION PANEL ===== */
+        .confirmation-panel {
+            display: none;
+            margin-top: 16px;
+            padding: 18px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #f0fff4, #e6ffed);
+            border: 2px solid #48bb78;
+            text-align: center;
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .confirmation-panel.show {
+            display: block;
+        }
+        .confirmation-panel .confirm-candidate {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 8px 0 14px;
+        }
+        .confirmation-panel .confirm-candidate img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #48bb78;
+        }
+        .confirmation-panel .confirm-candidate span {
+            font-weight: 700;
+            font-size: 16px;
+            color: #155724;
+        }
+        .confirmation-panel .confirm-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* ===== FADE SLOT FOR ACTION BUTTONS ===== */
+        .vote-actions {
+            margin-top: 16px;
+            min-height: 50px;
+        }
+        .vote-actions .btn-primary,
+        .vote-actions .btn-success {
+            opacity: 0;
+            transform: translateY(12px);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+        .vote-actions .btn-primary.show,
+        .vote-actions .btn-success.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* ===== AUTH VIEW REDESIGN ===== */
+        .auth-methods {
+            display: flex;
+            gap: 10px;
+            margin: 16px 0 10px;
+        }
+        .auth-method-tab {
+            flex: 1;
+            padding: 14px 10px;
+            text-align: center;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: #888;
+            background: #fafafa;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-method-tab .tab-icon {
+            font-size: 22px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .auth-method-tab:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background: #f0f2ff;
+            transform: translateY(-2px);
+        }
+        .auth-method-tab.active {
+            border-color: #667eea;
+            color: #fff;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.35);
+            transform: translateY(-2px);
+        }
+        .auth-method-tab.active::after {
+            content: '✓';
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .auth-panel {
+            display: none;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .auth-panel.active {
+            display: block;
+        }
+
+        .auth-panel .panel-icon {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 6px;
+        }
+        .auth-panel .panel-title {
+            text-align: center;
+            font-weight: 700;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 2px;
+        }
+        .auth-panel .panel-desc {
+            text-align: center;
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 12px;
+        }
+
+        .token-input-wrap {
+            position: relative;
+        }
+        .token-input-wrap .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .token-input-wrap input {
+            padding-left: 44px !important;
+        }
+
+        /* ===== AUTH STATUS BADGE ===== */
+        .auth-badge {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            padding: 12px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid #c3e6cb;
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* ===== ROLE LOADER ===== */
+        .role-loader {
+            text-align: center;
+            padding: 20px;
+        }
+        .role-loader .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #e8e8e8;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== SUBMIT LOADER ===== */
+        .btn-loading {
+            pointer-events: none;
+            opacity: 0.8;
+            position: relative;
+        }
+        .btn-loading .btn-text {
+            visibility: hidden;
+        }
+        .btn-loading::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 22px;
+            height: 22px;
+            margin: -11px 0 0 -11px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        /* ===== RESULTS ===== */
+        .bar-container {
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin: 12px 0;
+            height: 36px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        .bar {
+            height: 100%;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+        .bar.animate {
+            animation: barShimmer 2s ease-in-out infinite;
+        }
+        @keyframes barShimmer {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.15); }
+            100% { filter: brightness(1); }
+        }
+        .bar-text {
+            padding-left: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            position: relative;
+            z-index: 1;
+        }
+        .bar-percent {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 700;
+            font-size: 14px;
+            color: #444;
+        }
+        .bar-percent.animate-num {
+            animation: numPop 0.3s ease;
+        }
+        @keyframes numPop {
+            0% { transform: translateY(-50%) scale(1.2); }
+            100% { transform: translateY(-50%) scale(1); }
+        }
+
+        .results-summary {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 16px 0;
+        }
+        .results-summary .stat {
+            text-align: center;
+            padding: 12px 20px;
+            background: #f8f9ff;
+            border-radius: 12px;
+            border: 1px solid #e8e8e8;
+        }
+        .results-summary .stat .num {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .results-summary .stat .label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* ===== CONFETTI ===== */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            animation: confettiFall linear forwards;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 460px) {
+            .candidate-grid { flex-direction: column; }
+            .candidate-card { padding: 14px; }
+            .candidate-img { width: 70px; height: 70px; }
+            .container { padding: 25px 18px; border-radius: 16px; }
+            h2 { font-size: 20px; }
+        }
+
+        /* ===== FLOATING STATUS (after vote) ===== */
+        .vote-success-screen {
+            text-align: center;
+            padding: 20px 0;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .vote-success-screen h3 {
+            color: #28a745;
+            font-size: 22px;
+            margin: 16px 0 6px;
+        }
+        .vote-success-screen p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        h3 {
+            text-align: center;
+            color: #222;
+            font-size: 18px;
+        }
+
+        .desc-text {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin: 6px 0 4px;
+        }
+
+        /* remove default input[type="radio"] hidden in cards */
+        .candidate-card input[type="radio"] {
+            cursor: pointer;
+        }
+
+        .vote-count {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .mt-10 { margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="container">
+    <h2>Kelompok 1 Voting Portal</h2>
+
+    <!-- AUTH VIEW -->
+    <div id="auth-view" class="view active">
+        <p class="desc-text" style="margin-bottom: 4px;">Choose how to authenticate</p>
+
+        <div class="auth-methods">
+            <div class="auth-method-tab active" id="tab-token" onclick="switchAuthTab('token')">
+                <span class="tab-icon">🔑</span>
+                Token
+            </div>
+            <div class="auth-method-tab" id="tab-account" onclick="switchAuthTab('account')">
+                <span class="tab-icon">👤</span>
+                Account
+            </div>
+        </div>
+
+        <div class="auth-panel active" id="panel-token">
+            <div class="panel-icon">🔑</div>
+            <div class="panel-title">One-Time Token</div>
+            <div class="panel-desc">Enter your unique voting token</div>
+
+            <div class="token-input-wrap">
+                <span class="input-icon">🔐</span>
+                <input type="text" id="tokenId" placeholder="Paste your UUID here" style="padding-left:44px;">
+            </div>
+
+            <button class="btn-primary" onclick="processTokenLogin()">
+                <span class="btn-text">Enter Voting Booth</span>
+            </button>
+        </div>
+
+        <div class="auth-panel" id="panel-account">
+            <div class="panel-icon">👤</div>
+            <div class="panel-title">Account Login</div>
+            <div class="panel-desc">Sign in with your credentials</div>
+
+            <button class="btn-cognito" onclick="redirectToLogin()">
+                <span class="btn-text">Log In via Cognito</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- PORTAL VIEW (transient — auto-redirects) -->
+    <div id="portal-view" class="view">
+        <div class="auth-badge">🟢 Authenticated Successfully</div>
+        <div id="role-checking-msg" class="role-loader">
+            <div class="spinner"></div>
+            Checking account permissions...
+        </div>
+    </div>
+
+    <!-- VOTE VIEW -->
+    <div id="vote-view" class="view">
+        <h3>Cast Your Vote</h3>
+
+        <div class="vote-steps">
+            <div class="vote-step active" id="step1">
+                <span class="step-num">1</span>
+                Select
+            </div>
+            <div class="step-connector" id="conn1"></div>
+            <div class="vote-step" id="step2">
+                <span class="step-num">2</span>
+                Confirm
+            </div>
+            <div class="step-connector" id="conn2"></div>
+            <div class="vote-step" id="step3">
+                <span class="step-num">3</span>
+                Submit
+            </div>
+        </div>
+
+        <div class="candidate-grid">
+            <label class="candidate-card" id="card-A" onclick="selectCandidate('Candidate_A')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Prabowo_Subianto_2024_official_portrait.jpg/960px-Prabowo_Subianto_2024_official_portrait.jpg" alt="Prabowo Subianto" class="candidate-img" loading="lazy">
+                <div class="candidate-info">
+                    <input type="radio" name="candidate" value="Candidate_A" onchange="selectCandidate('Candidate_A')">
+                    Prabowo
+                </div>
+            </label>
+
+            <label class="candidate-card" id="card-B" onclick="selectCandidate('Candidate_B')">
+                <img src="candidateB.jpg" alt="Muhammad Shafly" class="candidate-img" loading="lazy">
+                <div class="candidate-info">
+                    <input type="radio" name="candidate" value="Candidate_B" onchange="selectCandidate('Candidate_B')">
+                    M. Shafly
+                </div>
+            </label>
+        </div>
+
+        <div class="confirmation-panel" id="confirmPanel">
+            <div class="confirm-label">You selected</div>
+            <div class="confirm-candidate" id="confirmDetails">
+                <img id="confirmImg" src="" alt="">
+                <span id="confirmName"></span>
+            </div>
+            <button class="btn-success" id="submitBtn" onclick="submitVote()">
+                <span class="btn-text">Submit Vote</span>
+            </button>
+        </div>
+
+        <div class="vote-actions">
+            <button class="btn-primary show" id="nextBtn" onclick="goToConfirm()">
+                <span class="btn-text">Review Vote →</span>
+            </button>
+        </div>
+
+        <button class="btn-outline" onclick="logout()">⬅ Log Out</button>
+
+        <div id="message"></div>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div id="admin-view" class="view">
+        <h3>Live Election Results</h3>
+        <p class="desc-text" style="margin-bottom: 10px;">
+            Total Votes: <span id="totalVotes" style="font-weight:700; color:#667eea;">0</span>
+        </p>
+
+        <div id="results-bars">
+            <div class="role-loader">
+                <div class="spinner"></div>
+                Loading results...
+            </div>
+        </div>
+
+        <div class="results-summary" id="resultsSummary" style="display:none;">
+            <div class="stat">
+                <div class="num" id="statA">0</div>
+                <div class="label">Prabowo</div>
+            </div>
+            <div class="stat">
+                <div class="num" id="statB">0</div>
+                <div class="label">M. Shafly</div>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="refreshResults()">🔄 Refresh</button>
+        <button class="btn-outline" onclick="logout()">⬅ Log Out</button>
+    </div>
+
+    <!-- SUCCESS OVERLAY (shown after vote) -->
+    <div id="success-view" class="view">
+        <div class="vote-success-screen">
+            <div class="checkmark-circle">
+                <svg viewBox="0 0 24 24">
+                    <path d="M5 13l4 4L19 7" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h3>Vote Cast Successfully!</h3>
+            <p>Your ballot has been recorded securely.</p>
+            <button class="btn-outline" style="margin-top:24px;" onclick="afterVoteDone()">Done</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ======================================================================
+    // CREDENTIALS
+    // ======================================================================
+    const API_URL = "https://77zw8ypxwj.execute-api.us-east-1.amazonaws.com";
+    const COGNITO_DOMAIN = "https://us-east-1nwwm6f7bj.auth.us-east-1.amazoncognito.com";
+    const CLIENT_ID = "6l7h2m5pgb9tquh2dobkom9a9k";
+    const REDIRECT_URI = "https://finalproject-ok.s3.us-east-1.amazonaws.com/index.html";
+    // ======================================================================
+
+    let activeAuthMode = null;
+    let manualTokenString = null;
+    let cognitoJWT = null;
+    let selectedCandidate = null;
+
+    // ===== PARTICLES =====
+    (function initParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 25; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + '%';
+            p.style.width = (3 + Math.random() * 5) + 'px';
+            p.style.height = p.style.width;
+            p.style.animationDuration = (8 + Math.random() * 20) + 's';
+            p.style.animationDelay = (Math.random() * 20) + 's';
+            container.appendChild(p);
+        }
+    })();
+
+    window.onload = function () {
+        const urlParams = new URLSearchParams(window.location.hash.substring(1));
+        if (urlParams.has('id_token')) {
+            cognitoJWT = urlParams.get('id_token');
+            activeAuthMode = 'cognito';
+            window.history.replaceState({}, document.title, window.location.pathname);
+            showView('portal-view');
+            determineUserRole(true);
+        }
+    };
+
+    function switchAuthTab(tab) {
+        document.querySelectorAll('.auth-method-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        document.getElementById('panel-' + tab).classList.add('active');
+    }
+
+    function showView(viewId) {
+        document.querySelectorAll('.view').forEach(el => {
+            if (el.id !== viewId) {
+                el.classList.remove('active');
+                el.style.display = 'none';
+            }
+        });
+        const target = document.getElementById(viewId);
+        target.style.display = 'block';
+        target.classList.add('active');
+        const msg = document.getElementById('message');
+        if (msg) msg.style.display = 'none';
+    }
+
+    function resetState() {
+        selectedCandidate = null;
+        const radios = document.querySelectorAll('input[name="candidate"]');
+        radios.forEach(r => r.checked = false);
+        document.querySelectorAll('.candidate-card').forEach(c => {
+            c.classList.remove('selected');
+            c.classList.remove('show');
+        });
+        document.getElementById('confirmPanel').classList.remove('show');
+        document.getElementById('nextBtn').classList.remove('show');
+        document.querySelectorAll('.vote-step').forEach(s => s.classList.remove('active', 'done'));
+        document.querySelectorAll('.step-connector').forEach(c => c.classList.remove('done'));
+        document.getElementById('step1').classList.add('active');
+    }
+
+    function showVoteView() {
+        showView('vote-view');
+        // staggered card entrance
+        setTimeout(() => {
+            document.querySelectorAll('.candidate-card').forEach(c => c.classList.add('show'));
+        }, 100);
+    }
+
+    function afterVoteDone() {
+        resetState();
+        manualTokenString = null;
+        activeAuthMode = null;
+        cognitoJWT = null;
+        document.getElementById('tokenId').value = '';
+        showView('auth-view');
+    }
+
+    function logout() {
+        manualTokenString = null;
+        activeAuthMode = null;
+        cognitoJWT = null;
+        document.getElementById('tokenId').value = '';
+        resetState();
+        showView('auth-view');
+    }
+
+    function selectCandidate(value) {
+        selectedCandidate = value;
+        document.querySelectorAll('.candidate-card').forEach(c => c.classList.remove('selected'));
+        const card = document.getElementById(value === 'Candidate_A' ? 'card-A' : 'card-B');
+        if (card) card.classList.add('selected');
+        const radio = card?.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+
+        // show "Review Vote" button
+        document.getElementById('nextBtn').classList.add('show');
+    }
+
+    function goToConfirm() {
+        const name = selectedCandidate === 'Candidate_A' ? 'Prabowo' : 'M. Shafly';
+        const imgSrc = selectedCandidate === 'Candidate_A'
+            ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Prabowo_Subianto_2024_official_portrait.jpg/960px-Prabowo_Subianto_2024_official_portrait.jpg'
+            : 'candidateB.jpg';
+
+        document.getElementById('confirmName').innerText = name;
+        document.getElementById('confirmImg').src = imgSrc;
+        document.getElementById('confirmPanel').classList.add('show');
+
+        // update steps
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step1').classList.add('done');
+        document.getElementById('conn1').classList.add('done');
+        document.getElementById('step2').classList.add('active');
+        document.getElementById('nextBtn').classList.remove('show');
+    }
+
+    function processTokenLogin() {
+        const tokenInput = document.getElementById("tokenId").value.trim();
+        if (!tokenInput) {
+            showMessage("Please enter a valid token.", "error");
+            return;
+        }
+        manualTokenString = tokenInput;
+        activeAuthMode = 'token';
+        resetState();
+        showVoteView();
+    }
+
+    function redirectToLogin() {
+        const encodedUri = encodeURIComponent(REDIRECT_URI);
+        const loginUrl = `${COGNITO_DOMAIN}/login?client_id=${CLIENT_ID}&response_type=token&scope=email+openid&redirect_uri=${encodedUri}`;
+        window.location.href = loginUrl;
+    }
+
+    async function determineUserRole(autoRedirect) {
+        try {
+            const response = await fetch(API_URL + "/results", {
+                method: "GET",
+                headers: { "Authorization": cognitoJWT }
+            });
+            const data = await response.json();
+            document.getElementById('role-checking-msg').style.display = 'none';
+            const isAdmin = !!data.results;
+            if (isAdmin) {
+                if (autoRedirect) loadAdminDashboard();
+            } else {
+                if (autoRedirect) showVoteView();
+            }
+        } catch (error) {
+            document.getElementById('role-checking-msg').innerHTML = `<p style="color:#e53e3e; font-weight:600;">❌ Network Error while verifying account.</p>`;
+        }
+    }
+
+    function showMessage(text, type) {
+        const msg = document.getElementById('message');
+        msg.style.display = 'block';
+        msg.className = type + '-msg';
+        msg.innerText = text;
+    }
+
+    async function submitVote() {
+        const selectedRadio = document.querySelector('input[name="candidate"]:checked');
+        const messageBox = document.getElementById("message");
+        const btn = document.getElementById('submitBtn');
+
+        if (!selectedRadio) {
+            showMessage("Please select a candidate.", "error");
+            return;
+        }
+
+        const candidate = selectedRadio.value;
+
+        let finalUrl = "";
+        let requestBody = { candidate_id: candidate };
+        let requestHeaders = { "Content-Type": "application/json" };
+
+        if (activeAuthMode === 'token') {
+            finalUrl = API_URL + "/vote/token";
+            requestBody.token_id = manualTokenString;
+        } else if (activeAuthMode === 'cognito') {
+            finalUrl = API_URL + "/vote/user";
+            requestHeaders["Authorization"] = cognitoJWT;
+        } else {
+            showMessage("No authentication mode active.", "error");
+            return;
+        }
+
+        // update steps to submitting
+        document.getElementById('step2').classList.remove('active');
+        document.getElementById('step2').classList.add('done');
+        document.getElementById('conn2').classList.add('done');
+        document.getElementById('step3').classList.add('active');
+
+        btn.classList.add('btn-loading');
+        messageBox.style.display = 'none';
+
+        try {
+            const response = await fetch(finalUrl, {
+                method: "POST",
+                headers: requestHeaders,
+                body: JSON.stringify(requestBody)
+            });
+            const data = await response.json();
+
+            btn.classList.remove('btn-loading');
+
+            if (!response.ok) {
+                showMessage("❌ Server Error: " + (data.message || data.error || "Unknown"), "error");
+                revertStepAfterError();
+                return;
+            }
+
+            if (data.error) {
+                showMessage("❌ Failed: " + data.error, "error");
+                revertStepAfterError();
+            } else if (data.message) {
+                // success
+                showView('success-view');
+                launchConfetti();
+            } else {
+                showView('success-view');
+                launchConfetti();
+            }
+        } catch (error) {
+            btn.classList.remove('btn-loading');
+            showMessage("❌ Network Error. Please try again.", "error");
+            revertStepAfterError();
+        }
+    }
+
+    function revertStepAfterError() {
+        document.getElementById('step3').classList.remove('active');
+        document.getElementById('step2').classList.add('active');
+    }
+
+    let refreshInterval = null;
+
+    async function loadAdminDashboard() {
+        showView('admin-view');
+        await fetchResults();
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(fetchResults, 10000);
+    }
+
+    async function refreshResults() {
+        await fetchResults();
+    }
+
+    async function fetchResults() {
+        const resultsDiv = document.getElementById("results-bars");
+        try {
+            const response = await fetch(API_URL + "/results", {
+                method: "GET",
+                headers: { "Authorization": cognitoJWT }
+            });
+            const data = await response.json();
+
+            if (data.results) {
+                const results = data.results;
+                const candidateA = results["Candidate_A"] || 0;
+                const candidateB = results["Candidate_B"] || 0;
+                const totalVotes = candidateA + candidateB;
+
+                animateNumber('totalVotes', totalVotes);
+                animateNumber('statA', candidateA);
+                animateNumber('statB', candidateB);
+
+                document.getElementById('resultsSummary').style.display = 'flex';
+
+                const percentA = totalVotes === 0 ? 0 : Math.round((candidateA / totalVotes) * 100);
+                const percentB = totalVotes === 0 ? 0 : Math.round((candidateB / totalVotes) * 100);
+
+                resultsDiv.innerHTML = `
+                    <div class="bar-container">
+                        <div class="bar" style="width: ${percentA}%; background: linear-gradient(90deg, #667eea, #764ba2);">
+                            <span class="bar-text">Prabowo (${candidateA})</span>
+                        </div>
+                        <span class="bar-percent animate-num">${percentA}%</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar" style="width: ${percentB}%; background: linear-gradient(90deg, #fc8181, #e53e3e);">
+                            <span class="bar-text">M. Shafly (${candidateB})</span>
+                        </div>
+                        <span class="bar-percent animate-num">${percentB}%</span>
+                    </div>
+                `;
+
+                // trigger bar animation after render
+                requestAnimationFrame(() => {
+                    document.querySelectorAll('.bar').forEach(b => b.classList.add('animate'));
+                });
+            }
+        } catch (error) {
+            resultsDiv.innerHTML = "<p style='color:#e53e3e; text-align:center; font-weight:600;'>❌ Network error while fetching results.</p>";
+        }
+    }
+
+    function animateNumber(elemId, target) {
+        const el = document.getElementById(elemId);
+        const current = parseInt(el.innerText) || 0;
+        if (current === target) return;
+        const duration = 800;
+        const start = performance.now();
+        function tick(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const val = Math.round(current + (target - current) * eased);
+            el.innerText = val;
+            if (progress < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function launchConfetti() {
+        const colors = ['#667eea', '#764ba2', '#48bb78', '#f6ad55', '#fc8181', '#4299e1', '#ed64a6'];
+        const container = document.createElement('div');
+        container.className = 'confetti-container';
+        document.body.appendChild(container);
+
+        for (let i = 0; i < 80; i++) {
+            const c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.left = Math.random() * 100 + '%';
+            c.style.background = colors[Math.floor(Math.random() * colors.length)];
+            c.style.width = (6 + Math.random() * 8) + 'px';
+            c.style.height = (6 + Math.random() * 8) + 'px';
+            c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+            c.style.animationDuration = (2 + Math.random() * 3) + 's';
+            c.style.animationDelay = (Math.random() * 1.5) + 's';
+            container.appendChild(c);
+        }
+
+        setTimeout(() => container.remove(), 5000);
+    }
+
+    // Close refresh interval on page unload
+    window.addEventListener('beforeunload', () => {
+        if (refreshInterval) clearInterval(refreshInterval);
+    });
+</script>
+</body>
+</html>
